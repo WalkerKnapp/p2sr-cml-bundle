@@ -63,7 +63,7 @@ export class GhostClient {
     name: string;
     ghost: DataGhost;
     model: string;
-    level: string;
+    map: string;
     tcpOnly: boolean;
     color: Color;
     spectator: boolean;
@@ -192,8 +192,8 @@ export class GhostServer {
             case Header.COUNTDOWN: console.log("Received Countdown packet"); break;
             case Header.UPDATE: break;
             case Header.SPEEDRUN_FINISH: this.handleSpeedrunFinishPacket(socket, chunk); break;
-            case Header.MODEL_CHANGE: console.log("Received ModelChange packet"); break;
-            case Header.COLOR_CHANGE: console.log("Received ColorChange packet"); break;
+            case Header.MODEL_CHANGE: this.handleModelChangePacket(socket, chunk); break;
+            case Header.COLOR_CHANGE: this.handleColorChangePacket(socket, chunk); break;
             default: console.log(`Received unknown header: ${header}`); break;
         }
     }
@@ -207,7 +207,7 @@ export class GhostServer {
         client.name = readSfmlString(chunk);
         client.ghost = readDataGhost(chunk);
         client.model = readSfmlString(chunk);
-        client.level = readSfmlString(chunk);
+        client.map = readSfmlString(chunk);
         client.tcpOnly = chunk.readUInt8() == 1;
         client.color = readColor(chunk);
         client.spectator = chunk.readUInt8() == 1;
@@ -226,6 +226,7 @@ export class GhostServer {
         client.raceReady = false;
 
         this.clients[this.lastId] = client;
+        this.clientsUpdateCallback(this.clients);
     }
 
     handleMapChangePacket(socket: Net.Socket, message: SmartBuffer) {
@@ -236,6 +237,14 @@ export class GhostServer {
         let splitTicksTotal = message.readUInt32BE();
 
         console.log(`Map change: User=${userId}, map=${map}, splitTicks=${splitTicks}, splitTicksTotal=${splitTicksTotal}`);
+
+        let client = this.clients[userId];
+        if (client) {
+            client.map = map;
+            this.clientsUpdateCallback(this.clients);
+        } else {
+            console.log(`Got map change packet for invalid user: ${userId}`);
+        }
     }
 
     handleMessagePacket(socket: Net.Socket, message: SmartBuffer) {
@@ -243,6 +252,8 @@ export class GhostServer {
         let content = readSfmlString(message);
 
         console.log(`New message: User=${userId}, Content="${content}"`);
+
+        // TODO: Send messages to other players on the server?
     }
 
     handleSpeedrunFinishPacket(socket: Net.Socket, message: SmartBuffer) {
@@ -269,5 +280,35 @@ export class GhostServer {
         }
 
         this.speedrunTimeCallback(time);
+    }
+
+    handleModelChangePacket(socket: Net.Socket, message: SmartBuffer) {
+        let userId = message.readUInt32BE();
+        let modelName = readSfmlString(message);
+
+        console.log(`Model change: User=${userId}, Model=${modelName}`);
+
+        let client = this.clients[userId];
+        if (client) {
+            client.modelName = modelName;
+            this.clientsUpdateCallback(this.clients);
+        } else {
+            console.log(`Got model change packet for invalid user: ${userId}`);
+        }
+    }
+
+    handleColorChangePacket(socket: Net.Socket, message: SmartBuffer) {
+        let userId = message.readUInt32BE();
+        let color = readColor(message);
+
+        console.log(`Color change: User=${userId}, Color=${color}`);
+
+        let client = this.clients[userId];
+        if (client) {
+            client.color = color;
+            this.clientsUpdateCallback(this.clients);
+        } else {
+            console.log(`Got color change packet for invalid user: ${userId}`);
+        }
     }
 }
