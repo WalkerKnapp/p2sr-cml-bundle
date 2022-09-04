@@ -1,42 +1,59 @@
 {
-  "name": "ghost-times-list",
-  "version": "0.0.0",
-  "description": "",
-  "homepage": "",
-  "author": {
-    "name": "Water",
-    "email": "walker@walkerknapp.me",
-    "url": ""
-  },
-  "files": [
-    "dashboard",
-    "graphics",
-    "extension.js",
-    "extension"
-  ],
-  "keywords": [
-    "",
-    "nodecg-bundle"
-  ],
-  "nodecg": {
-    "compatibleRange": "^1.1.1",
-    "dashboardPanels": [
-      {
-        "name": "ghost-control",
-        "title": "Ghost Control",
-        "width": 2,
-        "file": "ghost-control.html",
-        "headerColor": "#525F78"
-      }
+    "name": "ghost-times-list",
+    "version": "0.0.0",
+    "description": "",
+    "homepage": "",
+    "author": {
+        "name": "Water",
+        "email": "walker@walkerknapp.me",
+        "url": ""
+    },
+    "scripts": {
+        "build:extension": "tsc src/extension/index.ts --skipLibCheck --outDir extension",
+        "build:graphics": "vite build --base=./ src/graphics",
+        "build:dashboard": "vite build --base=./ src/dashboard"
+    },
+    "files": [
+        "dashboard",
+        "graphics",
+        "extension.js",
+        "extension"
     ],
-    "graphics": [
-      {
-        "file": "index.html",
-        "width": 1280,
-        "height": 720
-      }
-    ]
-  },
-  "repository": "https://github.com/nodecg/nodecg.git",
-  "license": "Apache-2.0"
+    "keywords": [
+        "nodecg-bundle"
+    ],
+    "nodecg": {
+        "compatibleRange": "^1.1.1",
+        "dashboardPanels": [
+            {
+                "name": "ghost-control",
+                "title": "Ghost Control",
+                "width": 2,
+                "file": "ghost-control.html",
+                "headerColor": "#525F78"
+            }
+        ],
+        "graphics": [
+            {
+                "file": "index.html",
+                "width": 1920,
+                "height": 1080
+            }
+        ]
+    },
+    "repository": "https://github.com/nodecg/nodecg.git",
+    "license": "Apache-2.0",
+    "devDependencies": {
+        "@sveltejs/vite-plugin-svelte": "^1.0.3",
+        "svelte-preprocess": "^4.10.7",
+        "typescript": "^4.8.2",
+        "vite": "^3.0.9",
+        "vite-plugin-fonts": "^0.6.0",
+        "vite-tsconfig-paths": "^3.5.0"
+    },
+    "dependencies": {
+        "@fortawesome/free-solid-svg-icons": "^6.2.0",
+        "smart-buffer": "^4.2.0",
+        "svelte-fa": "^3.0.3"
+    }
 }
