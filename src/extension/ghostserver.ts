@@ -44,6 +44,11 @@ function readSfmlString(buffer: SmartBuffer): string {
     return buffer.readString(chars);
 }
 
+function writeSfmlString(buffer: SmartBuffer, content: string) {
+    buffer.writeUInt32BE(content.length);
+    buffer.writeString(content);
+}
+
 export class SpeedrunTime {
     steamName: string;
     map: string;
@@ -112,6 +117,57 @@ export class GhostServer {
         });
 
         this.server.listen(53000, "0.0.0.0");
+    }
+
+    sendChatMessage(target: number, authorId: number, content: string) {
+        let targetClient = this.clients[target];
+
+        if (!targetClient) {
+            console.log("Tried to send chat message to invalid client ID: ", target);
+            return;
+        }
+
+        let message = new SmartBuffer();
+        message.writeUInt8(Header.MESSAGE);
+        message.writeUInt32BE(authorId);
+        writeSfmlString(message, content);
+
+        sendSfmlPacket(targetClient.socket, message);
+    }
+
+    sendCountdownSetup(target: number, preCommands: string, postCommands: string, duration: number) {
+        let targetClient = this.clients[target];
+
+        if (!targetClient) {
+            console.log("Tried to send countdown setup to invalid client ID: ", target);
+            return;
+        }
+
+        let message = new SmartBuffer();
+        message.writeUInt8(Header.COUNTDOWN);
+        message.writeUInt32BE(0); // Originate from id=0, the server
+        message.writeUInt8(0); // Step 0 == Setup
+        message.writeUInt32BE(duration);
+        writeSfmlString(message, preCommands);
+        writeSfmlString(message, postCommands);
+
+        sendSfmlPacket(targetClient.socket, message);
+    }
+
+    sendCountdownExecute(target: number) {
+        let targetClient = this.clients[target];
+
+        if (!targetClient) {
+            console.log("Tried to send countdown execute to invalid client ID: ", target);
+            return;
+        }
+
+        let message = new SmartBuffer();
+        message.writeUInt8(Header.COUNTDOWN);
+        message.writeUInt32BE(0); // Originate from id=0, the server
+        message.writeUInt8(1); // Step 1 == Exec
+
+        sendSfmlPacket(targetClient.socket, message);
     }
 
     handleChunk(socket: Net.Socket, chunk: SmartBuffer) {
