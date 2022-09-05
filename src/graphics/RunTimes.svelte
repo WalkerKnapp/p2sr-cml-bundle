@@ -3,6 +3,7 @@
     import { fly } from "svelte/transition"
 
     // Global parameters
+    export let rightSide = false;
     export let steam;
     const globalTimes = nodecg.Replicant("times", { defaultValue: {}, persistent: false });
 
@@ -64,7 +65,7 @@
 <div class="times">
     <!-- Show up to 3 runs at the same time -->
     {#each displayTimes.slice(0, 3) as time, i (time)}
-        <div class="time" class:pb={time === currentPb} transition:fly="{{ x: -200, duration: 500 }}">
+        <div class="time" class:pb={time === currentPb} class:rightTime={rightSide} transition:fly="{{ x: rightSide ? 200 : -200, duration: 500 }}">
             {formatTime(time)}
         </div>
     {/each}
@@ -96,6 +97,10 @@
 
         padding: 0 30px;
         box-sizing: border-box;
+    }
+
+    .rightTime {
+        justify-content: right;
     }
 
     .pb {

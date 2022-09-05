@@ -50,30 +50,36 @@
     });
 
     // Track timer
-    let timerText = "";
+    let timerText = formatTimer(timerDuration.value, timer.value);
     timer.on('change', (newValue, oldValue) => {
-        if (!timerDuration.value) {
+       timerText = formatTimer(timerDuration.value, newValue);
+    });
+    timerDuration.on('change', (newValue) => {
+        timerText = formatTimer(newValue, timer.value);
+    });
+
+    function formatTimer(duration, timerVal) {
+        if (!duration) {
             console.log("Timer Duration not set");
-            timerText = "";
-            return;
+            return "";
         }
 
         let remainingMillis;
-        if (newValue) {
-            remainingMillis = Math.max((timerDuration.value * 60 * 1000) - newValue.milliseconds, 0);
+        if (timerVal) {
+            remainingMillis = Math.max((duration * 60 * 1000) - timerVal.milliseconds, 0);
         } else {
-            remainingMillis = (timerDuration.value * 60 * 1000);
+            remainingMillis = (duration * 60 * 1000);
         }
 
         let minutes = Math.floor(remainingMillis / (60 * 1000));
         let seconds = Math.floor((remainingMillis % (60 * 1000)) / 1000);
 
         if (seconds >= 10) {
-            timerText = minutes + ":" + seconds.toFixed(0);
+            return minutes + ":" + seconds.toFixed(0);
         } else {
-            timerText = minutes + ":0" + seconds.toFixed(0);
+            return minutes + ":0" + seconds.toFixed(0);
         }
-    });
+    }
 
     function formatTime(totalSeconds) {
         if (totalSeconds === undefined) {
@@ -137,8 +143,6 @@
             </div>
             <RunTimes steam={runner2Steam}/>
         </div>
-
-        <!--<RunTimes steam={runner2Steam}></RunTimes>-->
     </div>
 </div>
 
@@ -293,7 +297,7 @@
         left: 0;
 
         /* NOTE: Comment out this line to go back to the commentator name being moved by the mic icon */
-        position: absolute;
+        /* position: absolute; */
     }
 
     .commName {

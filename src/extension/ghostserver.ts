@@ -115,6 +115,7 @@ export class GhostServer {
                 this.handleChunk(socket, new SmartBuffer().writeBuffer(chunk))
             });
             socket.on('close', () => {
+                // @ts-ignore
                 [...this.clients.values()].filter(c => c.socket !== socket).map(c => c.id)
                     .forEach(id => this.clients.delete(id));
 

@@ -32,6 +32,13 @@
                 "width": 4,
                 "file": "ghost-control.html",
                 "headerColor": "#525F78"
+            },
+            {
+                "name": "map-control",
+                "title": "Map Control",
+                "width": 2,
+                "file": "map-control.html",
+                "headerColor": "#525F78"
             }
         ],
         "graphics": [

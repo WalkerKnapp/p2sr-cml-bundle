@@ -9,7 +9,8 @@ export default defineConfig({
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                ghostControl: "src/dashboard/ghost-control.html"
+                ghostControl: "src/dashboard/ghost-control.html",
+                mapControl: "src/dashboard/map-control.html"
             }
         }
     },
