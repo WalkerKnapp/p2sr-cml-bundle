@@ -41,5 +41,16 @@ export default defineConfig({
                 }
             })]
         })
-    ]
+    ],
+    experimental: {
+        renderBuiltUrl: (filename, type) => {
+            console.log(filename, type);
+
+            if (type.hostType === "html") {
+                return `./${filename}`;
+            } else {
+                return `../${filename}`;
+            }
+        }
+    }
 })

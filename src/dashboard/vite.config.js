@@ -3,6 +3,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import sveltePreprocess from 'svelte-preprocess';
 
 export default defineConfig({
+    base: "/",
     build: {
         outDir: '../../dashboard',
         emptyOutDir: true,
@@ -25,5 +26,12 @@ export default defineConfig({
                 }
             })]
         })
-    ]
+    ],
+    experimental: {
+        renderBuiltUrl: (filename, type) => {
+            console.log(filename, type);
+
+            return `./${filename}`;
+        }
+    }
 })

@@ -2,9 +2,9 @@ import {NodeCG} from '../../../../types/server'
 
 import {GhostClient, GhostServer} from "./ghostserver";
 
-export = (nodecg: NodeCG) => {
-    const ghostClients = nodecg.Replicant("ghostClients");
-    const times = nodecg.Replicant("times", { defaultValue: {} });
+export default (nodecg: NodeCG) => {
+    const ghostClients = nodecg.Replicant("ghostClients", { defaultValue: [], persistent: false });
+    const times = nodecg.Replicant("times", { defaultValue: {}, persistent: false });
 
     const runner1 = nodecg.Replicant("runner1");
     const runner2 = nodecg.Replicant("runner2");
@@ -15,7 +15,12 @@ export = (nodecg: NodeCG) => {
     const server = new GhostServer();
 
     server.on('clients', (clients: Map<number, GhostClient>) => {
-        ghostClients.value = Array.of(clients.values())
+        let clientsList = [...clients.values()].map(c => {
+            let ret = Object.assign({}, c);
+            ret.socket = undefined;
+            return ret;
+        });
+        ghostClients.value = clientsList;
     });
     server.on('time', (time) => {
         if (times.value[time.steamName] == undefined) {

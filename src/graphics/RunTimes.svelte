@@ -4,10 +4,11 @@
 
     // Global parameters
     export let steam;
-    const globalTimes = nodecg.Replicant("times", { defaultValue: {} });
+    const globalTimes = nodecg.Replicant("times", { defaultValue: {}, persistent: false });
 
     // Local parameters
-    let times;
+    let displayTimes;
+    let currentPb;
 
     // Setup reactivity
     globalTimes.on('change', () => refreshTimes());
@@ -21,20 +22,26 @@
 
             // Display only times that have been achieved in the last 3 seconds
             let newTimes = [];
+            let newCurrentPb = undefined;
 
             fullTimesList.forEach(time => {
-                if (Date.now() - time.achieved < 10000) {
+                if (Date.now() - time.achieved < 4000) {
                     newTimes.push(time.totalSeconds);
 
                     // Schedule another refresh a bit after we expect this time to expire
-                    setTimeout(refreshTimes, (10000 - (Date.now() - time.achieved)) + 100);
+                    setTimeout(refreshTimes, (4000 - (Date.now() - time.achieved)) + 100);
+                }
+
+                if (!newCurrentPb || time.totalSeconds < newCurrentPb) {
+                    newCurrentPb = time.totalSeconds;
                 }
             });
 
-            times = newTimes;
+            displayTimes = newTimes;
+            currentPb = newCurrentPb;
         } else {
             console.log("Times undef", steam, globalTimes.value);
-            times = [];
+            displayTimes = [];
         }
     }
 
@@ -56,8 +63,8 @@
 
 <div class="times">
     <!-- Show up to 3 runs at the same time -->
-    {#each times.slice(0, 3) as time, i (time)}
-        <div class="time" class:pb={i === 0} transition:fly="{{ x: -200, duration: 500 }}">
+    {#each displayTimes.slice(0, 3) as time, i (time)}
+        <div class="time" class:pb={time === currentPb} transition:fly="{{ x: -200, duration: 500 }}">
             {formatTime(time)}
         </div>
     {/each}

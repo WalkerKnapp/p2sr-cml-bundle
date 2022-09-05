@@ -75,7 +75,6 @@ export class GhostClient {
 export class GhostServer {
     server: Net.Server | undefined;
 
-    unhandshakedSockets: Net.Socket[] = [];
     clients: Map<number, GhostClient> = new Map<number, GhostClient>();
 
     clientsUpdateCallback: (clients: Map<number, GhostClient>) => void;
@@ -101,26 +100,33 @@ export class GhostServer {
             return;
         }
 
-        this.server = Net.createServer((socket) => {
-            this.unhandshakedSockets.push(socket);
+        this.server = Net.createServer((socket) => setTimeout(() => {
+            // Handle handshake
+            let handshakeLength = bufferRead(socket, 4)?.readUInt32BE();
+            if (!handshakeLength) {
+                console.log("Handshake with client", socket.remoteAddress, "timed out");
+                socket.end();
+                return;
+            }
+            let handshakeBuffer = bufferRead(socket, handshakeLength);
+            this.handleHandshakePacket(socket, handshakeBuffer);
 
             socket.on('data', (chunk) => {
                 this.handleChunk(socket, new SmartBuffer().writeBuffer(chunk))
             });
             socket.on('close', () => {
-                this.unhandshakedSockets = this.unhandshakedSockets.filter((s) => s !== socket);
-                Array.from(this.clients.values()).filter(c => c.socket !== socket).map(c => c.id)
+                [...this.clients.values()].filter(c => c.socket !== socket).map(c => c.id)
                     .forEach(id => this.clients.delete(id));
 
                 this.clientsUpdateCallback(this.clients);
             });
-        });
+        }, 50));
 
         this.server.listen(53000, "0.0.0.0");
     }
 
     sendChatMessage(target: number, authorId: number, content: string) {
-        let targetClient = this.clients[target];
+        let targetClient = this.clients.get(target);
 
         if (!targetClient) {
             console.log("Tried to send chat message to invalid client ID: ", target);
@@ -136,7 +142,7 @@ export class GhostServer {
     }
 
     sendCountdownSetup(target: number, preCommands: string, postCommands: string, duration: number) {
-        let targetClient = this.clients[target];
+        let targetClient = this.clients.get(target);
 
         if (!targetClient) {
             console.log("Tried to send countdown setup to invalid client ID: ", target);
@@ -155,7 +161,7 @@ export class GhostServer {
     }
 
     sendCountdownExecute(target: number) {
-        let targetClient = this.clients[target];
+        let targetClient = this.clients.get(target);
 
         if (!targetClient) {
             console.log("Tried to send countdown execute to invalid client ID: ", target);
@@ -171,12 +177,6 @@ export class GhostServer {
     }
 
     handleChunk(socket: Net.Socket, chunk: SmartBuffer) {
-        if (this.unhandshakedSockets.includes(socket)) {
-            // Receive handshake
-            this.handleHandshakePacket(socket, chunk);
-            return;
-        }
-
         let length = chunk.readUInt32BE();
         let header = chunk.readUInt8();
 
@@ -184,7 +184,7 @@ export class GhostServer {
             case Header.NONE: console.log("Received None packet"); break;
             case Header.CONNECT: console.log("Received Connect packet"); break;
             case Header.PING: console.log("Received Ping packet"); break;
-            case Header.DISCONNECT: console.log("Received Disconnect packet"); break;
+            case Header.DISCONNECT: this.handleDisconnectPacket(socket, chunk); break;
             case Header.STOP_SERVER: console.log("Received StopServer packet"); break;
             case Header.MAP_CHANGE: this.handleMapChangePacket(socket, chunk); break;
             case Header.HEART_BEAT: console.log("Received HeartBeat packet"); break;
@@ -201,7 +201,6 @@ export class GhostServer {
     handleHandshakePacket(socket: Net.Socket, chunk: SmartBuffer) {
         let client = new GhostClient();
 
-        let length = chunk.readUInt32BE();
         let header = chunk.readUInt8();
         client.localPort = chunk.readUInt16BE();
         client.name = readSfmlString(chunk);
@@ -217,7 +216,7 @@ export class GhostServer {
         // Send handshake response
         let packet = new SmartBuffer();
         packet.writeUInt32BE(++this.lastId);
-        packet.writeUInt32BE(0); // TODO: Show other players on the server?
+        packet.writeUInt32BE(0); // TODO: Show other ghostClients on the server?
 
         sendSfmlPacket(socket, packet);
 
@@ -225,7 +224,14 @@ export class GhostServer {
         client.socket = socket;
         client.raceReady = false;
 
-        this.clients[this.lastId] = client;
+        this.clients.set(this.lastId, client);
+        this.clientsUpdateCallback(this.clients);
+    }
+
+    handleDisconnectPacket(socket: Net.Socket, message: SmartBuffer) {
+        let userId = message.readUInt32BE();
+
+        this.clients.delete(userId);
         this.clientsUpdateCallback(this.clients);
     }
 
@@ -238,7 +244,7 @@ export class GhostServer {
 
         console.log(`Map change: User=${userId}, map=${map}, splitTicks=${splitTicks}, splitTicksTotal=${splitTicksTotal}`);
 
-        let client = this.clients[userId];
+        let client = this.clients.get(userId);
         if (client) {
             client.map = map;
             this.clientsUpdateCallback(this.clients);
@@ -253,7 +259,7 @@ export class GhostServer {
 
         console.log(`New message: User=${userId}, Content="${content}"`);
 
-        // TODO: Send messages to other players on the server?
+        // TODO: Send messages to other ghostClients on the server?
     }
 
     handleSpeedrunFinishPacket(socket: Net.Socket, message: SmartBuffer) {
@@ -264,12 +270,12 @@ export class GhostServer {
 
         let time = new SpeedrunTime();
 
-        time.steamName = this.clients[userId]?.name;
-        time.map = this.clients[userId]?.map;
+        time.steamName = this.clients.get(userId)?.name;
+        time.map = this.clients.get(userId)?.map;
         time.achieved = Date.now();
 
         if (timeStr.indexOf(":") != -1) {
-            let parts = timeStr.split(".");
+            let parts = timeStr.split(":");
 
             let minutes = Number(parts[parts.length - 2]);
             let seconds = Number(parts[parts.length - 1]);
@@ -288,9 +294,9 @@ export class GhostServer {
 
         console.log(`Model change: User=${userId}, Model=${modelName}`);
 
-        let client = this.clients[userId];
+        let client = this.clients.get(userId);
         if (client) {
-            client.modelName = modelName;
+            client.model = modelName;
             this.clientsUpdateCallback(this.clients);
         } else {
             console.log(`Got model change packet for invalid user: ${userId}`);
@@ -303,7 +309,7 @@ export class GhostServer {
 
         console.log(`Color change: User=${userId}, Color=${color}`);
 
-        let client = this.clients[userId];
+        let client = this.clients.get(userId);
         if (client) {
             client.color = color;
             this.clientsUpdateCallback(this.clients);
