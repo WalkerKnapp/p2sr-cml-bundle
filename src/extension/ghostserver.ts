@@ -260,6 +260,19 @@ export class GhostServer {
 
         console.log(`New message: User=${userId}, Content="${content}"`);
 
+        if (content == "!r") {
+            let client = this.clients.get(userId);
+
+            if (client) {
+                client.raceReady = true;
+                this.clientsUpdateCallback(this.clients);
+            } else {
+                console.log(`Got map change packet for invalid user: ${userId}`);
+            }
+
+            this.sendChatMessage(userId, 0, "Ready!");
+        }
+
         // TODO: Send messages to other ghostClients on the server?
     }
 

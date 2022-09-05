@@ -39,8 +39,10 @@
             playerList = [];
         }
 
-        for (let player in ghostClients.value) {
+        ghostClients.value.forEach(player => {
+            console.log("A", player);
             let newPlayer = Object.assign({}, player);
+            console.log("B", newPlayer);
 
             if (times.value && attempts.value) {
                 newPlayer.runs = (times.value[newPlayer.name]?.length ?? 0) + "/" + (attempts.value[newPlayer.name] ?? 0);
@@ -57,7 +59,7 @@
             }
 
             newPlayerList.push(newPlayer);
-        }
+        });
 
         playerList = newPlayerList;
     }
@@ -77,11 +79,11 @@
     }
 
     function startPractice() {
-
+        nodecg.sendMessage("startPractice");
     }
 
     function startRound() {
-
+        nodecg.sendMessage("startRound");
     }
 </script>
 
