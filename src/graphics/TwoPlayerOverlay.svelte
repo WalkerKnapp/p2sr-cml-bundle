@@ -6,9 +6,9 @@
     const timer = nodecg.Replicant("timer", "nodecg-speedcontrol");
     const timerDuration = nodecg.Replicant('timer-duration', "p2cml");
     const globalCommentators = nodecg.Replicant("commentators");
-    const runner1 = nodecg.Replicant("runner1");
-    const runner2 = nodecg.Replicant("runner2");
-    const times = nodecg.Replicant("times");
+    const runner1 = nodecg.Replicant("runner1", { persistent: false });
+    const runner2 = nodecg.Replicant("runner2", { persistent: false });
+    const times = nodecg.Replicant("times", { persistent: false });
 
     // Track runner steam accounts/display names
     let runner1Name = runner1.value?.displayName ?? "";
@@ -141,7 +141,7 @@
                 <!-- Spacer --> <div style="width: 2px"></div>
                 <div class="racePb">Race PB: {runner2Pb}</div>
             </div>
-            <RunTimes steam={runner2Steam}/>
+            <RunTimes steam={runner2Steam} rightSide={true}/>
         </div>
     </div>
 </div>

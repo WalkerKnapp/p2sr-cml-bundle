@@ -62,10 +62,10 @@
     }
 </script>
 
-<div class="times">
+<div class="times" class:rightTimes={rightSide} >
     <!-- Show up to 3 runs at the same time -->
     {#each displayTimes.slice(0, 3) as time, i (time)}
-        <div class="time" class:pb={time === currentPb} class:rightTime={rightSide} transition:fly="{{ x: rightSide ? 200 : -200, duration: 500 }}">
+        <div class="time" class:pb={time === currentPb} transition:fly="{{ x: rightSide ? 200 : -200, duration: 500 }}">
             {formatTime(time)}
         </div>
     {/each}
@@ -99,8 +99,8 @@
         box-sizing: border-box;
     }
 
-    .rightTime {
-        justify-content: right;
+    .rightTimes {
+        align-items: flex-end;
     }
 
     .pb {

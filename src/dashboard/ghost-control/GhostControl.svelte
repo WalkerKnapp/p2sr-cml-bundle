@@ -1,7 +1,7 @@
 <script lang="ts">
     const ghostClients = nodecg.Replicant("ghostClients", { defaultValue: [], persistent: false });
-    const runner1 = nodecg.Replicant("runner1");
-    const runner2 = nodecg.Replicant("runner2");
+    const runner1 = nodecg.Replicant("runner1", { persistent: false });
+    const runner2 = nodecg.Replicant("runner2", { persistent: false });
 
     const times = nodecg.Replicant("times", { defaultValue: {}, persistent: false });
     const attempts = nodecg.Replicant("attempts", { defaultValue: {}, persistent: false});
@@ -85,6 +85,8 @@
     function startRound() {
         nodecg.sendMessage("startRound");
     }
+
+    // Stream Delay Management
 </script>
 
 <div class="list-container">
@@ -110,7 +112,7 @@
                 <td class="list-cell">{player.name}</td>
                 <td class="list-cell">{player.map}</td>
                 <td class="list-cell"><input type="radio" id={`${player.id}-p1`} name="player1" checked={player1Steam === player.name} on:click={() => player1Steam = player.name}></td>
-                <td class="list-cell"><input type="radio" id={`${player.id}-p2`} name="player2" checked={player1Steam === player.name} on:click={() => player2Steam = player.name}></td>
+                <td class="list-cell"><input type="radio" id={`${player.id}-p2`} name="player2" checked={player2Steam === player.name} on:click={() => player2Steam = player.name}></td>
                 <td class="list-cell">{player.raceReady}</td>
                 <td class="list-cell">{player.runs}</td>
                 <td class="list-cell">{player.delay}</td>
@@ -123,6 +125,11 @@
     <button on:click={startRound}>Start Round (5 Second Countdown)</button>
     <hr>
     Stream Delay Management
+    <div style="width: 90%; height: 5rem; margin: auto; display: flex;">
+        <div style="flex-basis: 0; flex-grow: 1; height: 100%; background-color: green;"></div>
+        <div style="width: 2px; background-color: white"></div>
+        <div style="flex-basis: 0; flex-grow: 1; height: 100%; background-color: red;"></div>
+    </div>
 </div>
 
 <style>

@@ -56,6 +56,18 @@ export class SpeedrunTime {
     achieved: number;
 }
 
+export class MapChange {
+    client: GhostClient;
+    steamName: string;
+    map: string;
+
+    constructor(client: GhostClient, steamName: string, map: string) {
+        this.client = client;
+        this.steamName = steamName;
+        this.map = map;
+    }
+}
+
 export class GhostClient {
     id: number;
 
@@ -79,16 +91,20 @@ export class GhostServer {
 
     clientsUpdateCallback: (clients: Map<number, GhostClient>) => void;
     speedrunTimeCallback: (time: SpeedrunTime) => void;
+    mapChangeCallback: (change: MapChange) => void;
 
     lastId: number = 100;
 
-    on(event: string, callback: ((clients: Map<number, GhostClient>) => void) | ((time: SpeedrunTime) => void)) {
+    on(event: string, callback: ((clients: Map<number, GhostClient>) => void) | ((time: SpeedrunTime) => void) | ((change: MapChange) => void)) {
         switch (event) {
             case "clients":
                 this.clientsUpdateCallback = callback as (clients: Map<number, GhostClient>) => void;
                 break;
             case "time":
                 this.speedrunTimeCallback = callback as (time: SpeedrunTime) => void;
+                break;
+            case "mapchange":
+                this.mapChangeCallback = callback as (change: MapChange) => void;
                 break;
             default:
                 console.log("Tried to register for unknown event", event);
@@ -159,6 +175,9 @@ export class GhostServer {
         writeSfmlString(message, postCommands);
 
         sendSfmlPacket(targetClient.socket, message);
+
+        // Receive confirmation
+        // receiveSfmlPacket(targetClient.socket);
     }
 
     sendCountdownExecute(target: number) {
@@ -249,6 +268,7 @@ export class GhostServer {
         if (client) {
             client.map = map;
             this.clientsUpdateCallback(this.clients);
+            this.mapChangeCallback(new MapChange(client, client.name, map));
         } else {
             console.log(`Got map change packet for invalid user: ${userId}`);
         }
