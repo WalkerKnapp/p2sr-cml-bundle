@@ -78,11 +78,25 @@ export default (nodecg: NodeCG) => {
             newTimes[time.steamName] = [time];
             console.log("Assigning to", newTimes);
             times.value = newTimes;
+
+            // @ts-ignore
+            [...server.clients.keys()].forEach(id => {
+                let numericId = Number(id);
+                // @ts-ignore
+                server.sendChatMessage(numericId, 0, `${time.steamName} got a new PB: ${formatTime(time.totalSeconds)}`);
+            });
         } else {
             let newTimes = times.value;
             newTimes[time.steamName] = [...newTimes[time.steamName], time].sort((a, b) => a.totalSeconds - b.totalSeconds);
             console.log("Assigning to", newTimes);
             times.value = newTimes;
+
+            // @ts-ignore
+            [...server.clients.keys()].forEach(id => {
+                let numericId = Number(id);
+                // @ts-ignore
+                server.sendChatMessage(numericId, 0, `${time.steamName} got a new PB: ${formatTime(time.totalSeconds)}`);
+            });
         }
     });
     server.on('mapchange', (change: MapChange) => {
@@ -245,7 +259,7 @@ export default (nodecg: NodeCG) => {
             });
 
             // @ts-ignore
-            nodecg.extensions['nodecg-speedcontrol'].sendMessage('timerStop', { id: undefined, forfeit: undefined });
+            // nodecg.extensions['nodecg-speedcontrol'].sendMessage('timerStop', { id: undefined, forfeit: undefined });
         }
 
         // Check if the timer passed a notify point we need to process

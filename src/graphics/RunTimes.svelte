@@ -4,6 +4,7 @@
 
     // Global parameters
     export let rightSide = false;
+    export let delay = 0;
     export let steam;
     const globalTimes = nodecg.Replicant("times", { defaultValue: {}, persistent: false });
 
@@ -26,11 +27,20 @@
             let newCurrentPb = undefined;
 
             fullTimesList.forEach(time => {
-                if (Date.now() - time.achieved < 4000) {
+                let effectiveAchievedTime = time.achieved + (delay * 1000);
+
+                // Check if we should display this time w/ stream delay
+                if (Date.now() < effectiveAchievedTime) {
+                    // Schedule another refresh a bit after we expect this time to be effectively achieved
+                    setTimeout(refreshTimes, (effectiveAchievedTime - Date.now()) + 100);
+                    return;
+                }
+
+                if (Date.now() - effectiveAchievedTime < 4000) {
                     newTimes.push(time.totalSeconds);
 
                     // Schedule another refresh a bit after we expect this time to expire
-                    setTimeout(refreshTimes, (4000 - (Date.now() - time.achieved)) + 100);
+                    setTimeout(refreshTimes, (4000 - (Date.now() - effectiveAchievedTime)) + 100);
                 }
 
                 if (!newCurrentPb || time.totalSeconds < newCurrentPb) {

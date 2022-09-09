@@ -79,14 +79,47 @@
     }
 
     function startPractice() {
+        referenceTimestamp = Date.now();
         nodecg.sendMessage("startPractice");
     }
 
     function startRound() {
+        referenceTimestamp = Date.now() + (5 * 1000);
         nodecg.sendMessage("startRound");
     }
 
     // Stream Delay Management
+    let delayBoxFocused = false;
+    let referenceTimestamp = undefined;
+
+    let r1Processed = false;
+    let r1LastSync = 0;
+    let r2Processed = false;
+    let r2LastSync = 0;
+
+    function delayBoxKeydown(event: KeyboardEvent) {
+        if (!referenceTimestamp) {
+            return;
+        }
+
+        if (event.key === "1") {
+            r1LastSync = (Date.now() - referenceTimestamp) / 1000
+            runner1Delay.value = r1LastSync;
+            r1Processed = true;
+        }
+
+        if (event.key === "2") {
+            r2LastSync = (Date.now() - referenceTimestamp) / 1000;
+            runner2Delay.value = r2LastSync;
+            r2Processed = true;
+        }
+
+        if (event.key == "Escape") {
+            referenceTimestamp = undefined;
+            r1Processed = false;
+            r2Processed = false;
+        }
+    }
 </script>
 
 <div class="list-container">
@@ -125,10 +158,40 @@
     <button on:click={startRound}>Start Round (5 Second Countdown)</button>
     <hr>
     Stream Delay Management
-    <div style="width: 90%; height: 5rem; margin: auto; display: flex;">
-        <div style="flex-basis: 0; flex-grow: 1; height: 100%; background-color: green;"></div>
+    <div style="width: 90%; height: 5rem; margin: auto; display: flex;" on:focus={() => delayBoxFocused = true} on:blur={() => delayBoxFocused = false} on:keydown={delayBoxKeydown} tabindex="0">
+        {#if (referenceTimestamp)}
+            {#if (r1Processed)}
+                <div class="delay-box" style="background-color: green">
+                    Runner 1 delay adjusted to {r1LastSync}
+                </div>
+            {:else}
+                <div class="delay-box" style="background-color: darkgoldenrod;">
+                    Press 1 when Player 1 loads, or escape to cancel sync.
+                </div>
+            {/if}
+        {:else}
+            <div class="delay-box" style="background-color: red;">
+                Waiting for a sequence...
+            </div>
+        {/if}
+
         <div style="width: 2px; background-color: white"></div>
-        <div style="flex-basis: 0; flex-grow: 1; height: 100%; background-color: red;"></div>
+
+        {#if (referenceTimestamp)}
+            {#if (r2Processed)}
+                <div class="delay-box" style="background-color: green">
+                    Runner 2 delay adjusted to {r2LastSync}
+                </div>
+            {:else}
+                <div class="delay-box" style="background-color: darkgoldenrod;">
+                    Press 2 when Player 2 loads, or escape to cancel sync.
+                </div>
+            {/if}
+        {:else}
+            <div class="delay-box" style="background-color: red;">
+                Waiting for a sequence...
+            </div>
+        {/if}
     </div>
 </div>
 
@@ -141,5 +204,14 @@
     .list-cell {
         text-align: center;
         margin: auto;
+    }
+
+    .delay-box {
+        flex-basis: 0;
+        flex-grow: 1;
+        height: 100%;
+
+        text-align: center;
+        line-height: 5rem;
     }
 </style>

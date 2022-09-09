@@ -8,6 +8,8 @@
     const globalCommentators = nodecg.Replicant("commentators");
     const runner1 = nodecg.Replicant("runner1", { persistent: false });
     const runner2 = nodecg.Replicant("runner2", { persistent: false });
+    const runner1Delay = nodecg.Replicant("runner1Delay", { defaultValue: 0.0, persistent: false });
+    const runner2Delay = nodecg.Replicant("runner2Delay", { defaultValue: 0.0, persistent: false });
     const times = nodecg.Replicant("times", { persistent: false });
 
     // Track runner steam accounts/display names
@@ -17,8 +19,10 @@
     let runner2Steam = runner2.value?.steam ?? "";
     let runner1Score = runner1.value?.score ?? 0;
     let runner2Score = runner2.value?.score ?? 0;
-    let runner1Pb = formatTime(times.value?.[runner1Steam]?.[0]?.totalSeconds);
-    let runner2Pb = formatTime(times.value?.[runner2Steam]?.[0]?.totalSeconds);
+    let runner1Pb = times.value?.[runner1Steam]?.[0]?.totalSeconds;
+    let runner2Pb = times.value?.[runner2Steam]?.[0]?.totalSeconds;
+    let r1Delay = runner1Delay.value;
+    let r2Delay = runner2Delay.value;
 
     console.log(times.value);
     console.log("Pbs initially set", runner1Pb, runner2Pb);
@@ -26,21 +30,42 @@
     runner1.on('change', (newValue, oldValue) => {
         runner1Name = newValue.displayName;
         runner1Steam = newValue.steam;
-        runner1Pb = formatTime(times.value?.[runner1Steam]?.[0]?.totalSeconds);
-        console.log(times.value);
-        console.log("Pbs set", runner1Pb);
+
+        // Schedule a PB update to account for stream delay
+        let pb = times.value?.[runner1Steam]?.[0]?.totalSeconds;
+        setTimeout(() => {
+            runner1Pb = pb;
+        }, runner1Delay.value * 1000);
     });
     runner2.on('change', (newValue, oldValue) => {
         runner2Name = newValue.displayName;
         runner2Steam = newValue.steam;
-        runner2Pb = formatTime(times.value?.[runner2Steam]?.[0]?.totalSeconds);
+
+        // Schedule a PB update to account for stream delay
+        let pb = times.value?.[runner2Steam]?.[0]?.totalSeconds;
+        setTimeout(() => {
+            runner2Pb = pb;
+        }, runner2Delay.value * 1000);
     });
     times.on('change', (newValue, oldValue) => {
-        runner1Pb = formatTime(newValue?.[runner1Steam]?.[0]?.totalSeconds);
-        runner2Pb = formatTime(newValue?.[runner2Steam]?.[0]?.totalSeconds);
+        let r1Pb = newValue?.[runner1Steam]?.[0]?.totalSeconds;
+        let r2Pb = newValue?.[runner2Steam]?.[0]?.totalSeconds;
         console.log(runner1Steam, times.value?.[runner1Steam]);
         console.log("Pbs set", runner1Pb);
+
+        setTimeout(() => {
+            runner1Pb = r1Pb;
+        }, runner1Delay.value * 1000);
+        setTimeout(() => {
+            runner2Pb = r2Pb;
+        }, runner2Delay.value * 1000);
     });
+    runner1Delay.on('change', (newValue) => {
+        r1Delay = newValue;
+    });
+    runner2Delay.on('change', (newValue) => {
+        r2Delay = newValue;
+    })
 
     // Track commentators
     let commentatorNames = globalCommentators.value !== undefined ? globalCommentators.value : [];
@@ -83,7 +108,7 @@
 
     function formatTime(totalSeconds) {
         if (totalSeconds === undefined) {
-            return "None"
+            return undefined;
         }
 
         let minutes = Math.floor(totalSeconds / 60);
@@ -112,11 +137,11 @@
         <div class="playerInfo">
             <div class="namecard">{runner1Name}</div>
             <div class="scoreContainer">
-                <div class="racePb">Race PB: {runner1Pb}</div>
+                <div class="racePb">Race PB: {formatTime(runner1Pb) ?? "None"}</div>
                 <!-- Spacer --> <div style="width: 2px"></div>
                 <div class="raceScore">{runner1Score}</div>
             </div>
-            <RunTimes steam={runner1Steam}/>
+            <RunTimes steam={runner1Steam} delay={r1Delay}/>
         </div>
 
         <div class="centerInfo">
@@ -139,9 +164,9 @@
             <div class="scoreContainer">
                 <div class="raceScore">{runner2Score}</div>
                 <!-- Spacer --> <div style="width: 2px"></div>
-                <div class="racePb">Race PB: {runner2Pb}</div>
+                <div class="racePb">Race PB: {formatTime(runner2Pb) ?? "None"}</div>
             </div>
-            <RunTimes steam={runner2Steam} rightSide={true}/>
+            <RunTimes steam={runner2Steam} rightSide={true} delay={r2Delay}/>
         </div>
     </div>
 </div>
