@@ -8,8 +8,7 @@
     const globalCommentators = nodecg.Replicant("commentators");
     const runner1 = nodecg.Replicant("runner1", { persistent: false });
     const runner2 = nodecg.Replicant("runner2", { persistent: false });
-    const runner1Delay = nodecg.Replicant("runner1Delay", { defaultValue: 0.0, persistent: false });
-    const runner2Delay = nodecg.Replicant("runner2Delay", { defaultValue: 0.0, persistent: false });
+    const streamDelay = nodecg.Replicant("streamDelay", { defaultValue: 0, persistent: false });
     const times = nodecg.Replicant("times", { persistent: false });
 
     // Track runner steam accounts/display names
@@ -21,8 +20,8 @@
     let runner2Score = runner2.value?.score ?? 0;
     let runner1Pb = times.value?.[runner1Steam]?.[0]?.totalSeconds;
     let runner2Pb = times.value?.[runner2Steam]?.[0]?.totalSeconds;
-    let r1Delay = runner1Delay.value;
-    let r2Delay = runner2Delay.value;
+
+    let delay = streamDelay.value;
 
     console.log(times.value);
     console.log("Pbs initially set", runner1Pb, runner2Pb);
@@ -35,7 +34,7 @@
         let pb = times.value?.[runner1Steam]?.[0]?.totalSeconds;
         setTimeout(() => {
             runner1Pb = pb;
-        }, runner1Delay.value * 1000);
+        }, streamDelay.value * 1000);
     });
     runner2.on('change', (newValue, oldValue) => {
         runner2Name = newValue.displayName;
@@ -45,7 +44,7 @@
         let pb = times.value?.[runner2Steam]?.[0]?.totalSeconds;
         setTimeout(() => {
             runner2Pb = pb;
-        }, runner2Delay.value * 1000);
+        }, streamDelay.value * 1000);
     });
     times.on('change', (newValue, oldValue) => {
         let r1Pb = newValue?.[runner1Steam]?.[0]?.totalSeconds;
@@ -54,17 +53,13 @@
         console.log("Pbs set", runner1Pb);
 
         setTimeout(() => {
-            runner1Pb = r1Pb;
-        }, runner1Delay.value * 1000);
-        setTimeout(() => {
             runner2Pb = r2Pb;
-        }, runner2Delay.value * 1000);
+            runner1Pb = r1Pb;
+        }, streamDelay.value * 1000);
     });
-    runner1Delay.on('change', (newValue) => {
-        r1Delay = newValue;
-    });
-    runner2Delay.on('change', (newValue) => {
-        r2Delay = newValue;
+    streamDelay.on('change', (newValue) => {
+        delay = newValue;
+        timerText = formatTimer(timerDuration.value, timer.value);
     })
 
     // Track commentators
@@ -89,12 +84,14 @@
             return "";
         }
 
-        let remainingMillis;
+        let spentMillis;
         if (timerVal) {
-            remainingMillis = Math.max((duration * 60 * 1000) - timerVal.milliseconds, 0);
+            spentMillis = Math.max(0, timerVal.milliseconds - (streamDelay.value * 1000));
         } else {
-            remainingMillis = (duration * 60 * 1000);
+            spentMillis = 0;
         }
+
+        let remainingMillis = Math.max(0, (duration * 60 * 1000) - spentMillis);
 
         let minutes = Math.floor(remainingMillis / (60 * 1000));
         let seconds = Math.floor((remainingMillis % (60 * 1000)) / 1000);
@@ -141,7 +138,7 @@
                 <!-- Spacer --> <div style="width: 2px"></div>
                 <div class="raceScore">{runner1Score}</div>
             </div>
-            <RunTimes steam={runner1Steam} delay={r1Delay}/>
+            <RunTimes steam={runner1Steam} delay={delay}/>
         </div>
 
         <div class="centerInfo">
@@ -166,7 +163,7 @@
                 <!-- Spacer --> <div style="width: 2px"></div>
                 <div class="racePb">Race PB: {formatTime(runner2Pb) ?? "None"}</div>
             </div>
-            <RunTimes steam={runner2Steam} rightSide={true} delay={r2Delay}/>
+            <RunTimes steam={runner2Steam} rightSide={true} delay={delay}/>
         </div>
     </div>
 </div>
