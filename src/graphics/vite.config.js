@@ -3,11 +3,19 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import sveltePreprocess from 'svelte-preprocess';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { VitePluginFonts } from 'vite-plugin-fonts';
+import { svelteSVG } from "rollup-plugin-svelte-svg";
 
 export default defineConfig({
     build: {
         outDir: '../../graphics',
-        emptyOutDir: true
+        emptyOutDir: true,
+        rollupOptions: {
+            input: {
+                overlay: "src/graphics/overlay.html",
+                mapSelectBg: "src/graphics/map-select-bg.html",
+                mapSelectOverlay: "src/graphics/map-select.html"
+            }
+        }
     },
     plugins: [
         tsconfigPaths(),
@@ -29,6 +37,9 @@ export default defineConfig({
                 preload: false
             }
         }),
+        svelteSVG({
+            enforce: "pre"
+        }),
         svelte({
             preprocess: [sveltePreprocess({
                 typescript: {
@@ -45,6 +56,10 @@ export default defineConfig({
     experimental: {
         renderBuiltUrl: (filename, type) => {
             console.log(filename, type);
+
+            if (filename.endsWith(".wav")) {
+                return `./${filename}`;
+            }
 
             if (type.hostType === "html") {
                 return `./${filename}`;

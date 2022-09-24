@@ -1,5 +1,4 @@
 <script lang="ts">
-    import 'virtual:fonts.css';
     import { fly } from "svelte/transition"
 
     // Global parameters

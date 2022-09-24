@@ -1,6 +1,8 @@
 import {NodeCG} from '../../../../types/server'
 
 import {GhostClient, GhostServer, MapChange} from "./ghostserver";
+import {replicants} from "../shared/replicants";
+import {VETOS_PER_PLAYER} from "../shared/constants";
 
 enum Phase {
     NOT_IN_ROUND,
@@ -9,19 +11,26 @@ enum Phase {
 }
 
 export default (nodecg: NodeCG) => {
-    const runDataActiveRun = nodecg.Replicant("runDataActiveRun", "nodecg-speedcontrol");
+    const reps = replicants(nodecg);
 
-    const ghostClients = nodecg.Replicant("ghostClients", { defaultValue: [], persistent: false });
-    const times = nodecg.Replicant("times", { defaultValue: {}, persistent: false });
-    const attempts = nodecg.Replicant("attempts", { defaultValue: {}, persistent: false});
-    const currentMap = nodecg.Replicant("currentMap", { persistent: false });
+    const runDataActiveRun = reps.runData;
 
-    const runner1 = nodecg.Replicant("runner1", { defaultValue: {}, persistent: false });
-    const runner2 = nodecg.Replicant("runner2", { defaultValue: {}, persistent: false });
-    const commentators = nodecg.Replicant("commentators", { defaultValue: [], persistent: false });
+    const ghostClients = reps.ghostClients;
+    const times = reps.times;
+    const attempts = reps.attempts;
+    const currentMap = reps.currentMap;
 
-    const timer = nodecg.Replicant("timer", "nodecg-speedcontrol");
-    const timerDuration = nodecg.Replicant('timer-duration', "p2cml");
+    const runner1 = reps.runner1;
+    const runner2 = reps.runner2;
+    const commentators = reps.commentators;
+
+    const timer = reps.timer;
+    const timerDuration = reps.timerDuration;
+    const p2cmlScore1 = reps.score1;
+    const p2cmlScore2 = reps.score2;
+
+    reps.player1Vetos.value = Array(VETOS_PER_PLAYER);
+    reps.player2Vetos.value = Array(VETOS_PER_PLAYER);
 
     let playerOnFinalRun = {};
 
@@ -30,20 +39,52 @@ export default (nodecg: NodeCG) => {
     // TODO: This is just to mirror the current setup, it should probably move to some sort of dedicated dashboard
     runDataActiveRun.on('change', (newVal) => {
         if (newVal) {
-            let allNames = [];
+            let allPlayers = [];
             // @ts-ignore
             for (let team of newVal.teams) {
                 for (let player of team.players) {
-                    allNames.push(player.name);
+                    allPlayers.push(player);
                 }
             }
 
-            // @ts-ignore
-            runner1.value = { displayName: allNames[0], steam: runner1.value?.steam };
-            // @ts-ignore
-            runner2.value = { displayName: allNames[1], steam: runner2.value?.steam };
-            commentators.value = allNames.slice(2);
+            runner1.value = {
+                displayName: allPlayers[0].name,
+                boardsName: allPlayers[0].social?.twitch,
+                // @ts-ignore
+                steam: runner1.value?.steam,
+                score: p2cmlScore1.value
+            };
+            runner2.value = {
+                displayName: allPlayers[1].name,
+                boardsName: allPlayers[1].social?.twtich,
+                // @ts-ignore
+                steam: runner2.value?.steam,
+                score: p2cmlScore2.value
+            };
+            commentators.value = allPlayers.slice(2).map(p => p.name);
         }
+    });
+    p2cmlScore1.on('change', (newValue) => {
+        runner1.value = {
+            // @ts-ignore
+            displayName: runner1.value?.displayName,
+            // @ts-ignore
+            boardsName: runner1.value?.boardsName,
+            // @ts-ignore
+            steam: runner1.value?.steam,
+            score: newValue
+        };
+    });
+    p2cmlScore2.on('change', (newValue) => {
+        runner2.value = {
+            // @ts-ignore
+            displayName: runner2.value.displayName,
+            // @ts-ignore
+            boardsName: runner2.value?.boardsName,
+            // @ts-ignore
+            steam: runner2.value?.steam,
+            score: newValue
+        };
     });
 
     const server = new GhostServer();

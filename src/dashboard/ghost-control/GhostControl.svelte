@@ -1,21 +1,18 @@
 <script lang="ts">
+    import {replicantStores} from "../../shared/replicants";
+
     const WEBSOCKET_PASSWORD = "password_here";
 
-    const ghostClients = nodecg.Replicant("ghostClients", { defaultValue: [], persistent: false });
-    const runner1 = nodecg.Replicant("runner1", { persistent: false });
-    const runner2 = nodecg.Replicant("runner2", { persistent: false });
+    const replicants = replicantStores(nodecg);
 
-    const times = nodecg.Replicant("times", { defaultValue: {}, persistent: false });
-    const attempts = nodecg.Replicant("attempts", { defaultValue: {}, persistent: false});
+    const ghostClients = replicants.ghostClients;
+    const runner1 = replicants.runner1;
+    const runner2 = replicants.runner2;
 
-    const streamDelay = nodecg.Replicant("streamDelay", { defaultValue: 0, persistent: false });
+    const times = replicants.times;
+    const attempts = replicants.attempts;
 
-    let playerList = [];
-
-    let player1Steam = runner1.value?.steam ?? "";
-    let player2Steam = runner2.value?.steam ?? "";
-
-    let delay = streamDelay.value;
+    const streamDelay = replicants.streamDelay;
 
     let socket = new WebSocket("ws://stream.portal2.sr:8765/restream/" + WEBSOCKET_PASSWORD);
 
@@ -26,7 +23,7 @@
             case "delay":
                 let delay = message[1];
                 if (delay) {
-                    streamDelay.value = Number(delay)
+                    $streamDelay = Number(delay)
                 } else {
                     console.log("Invalid stream delay: " + delay);
                 }
@@ -36,60 +33,9 @@
         }
     });
 
-    // Setup reactivity
-    ghostClients.on('change', () => refreshPlayerList());
-    times.on('change', () => refreshPlayerList());
-    attempts.on('change', () => refreshPlayerList());
-
-    runner1.on('change', (newValue) => {
-        player1Steam = newValue?.steam ?? "";
-        refreshPlayerList();
-    });
-    runner2.on('change', (newValue) => {
-        player2Steam = newValue?.steam ?? "";
-        refreshPlayerList();
-    });
-
-    streamDelay.on('change', (newValue) => delay = newValue);
-
-    $: (player1Steam, player2Steam), refreshSteam();
-
-    function refreshPlayerList() {
-        let newPlayerList = [];
-
-        if (!ghostClients.value) {
-            playerList = [];
-        }
-
-        ghostClients.value.forEach(player => {
-            console.log("A", player);
-            let newPlayer = Object.assign({}, player);
-            console.log("B", newPlayer);
-
-            if (times.value && attempts.value) {
-                newPlayer.runs = (times.value[newPlayer.name]?.length ?? 0) + "/" + (attempts.value[newPlayer.name] ?? 0);
-            } else {
-                newPlayer.runs = "0/0";
-            }
-
-            newPlayerList.push(newPlayer);
-        });
-
-        playerList = newPlayerList;
-    }
-
-    function refreshSteam() {
-        if (runner1.value && runner1.value.steam != player1Steam) {
-            runner1.value.steam = player1Steam;
-        }
-        if (runner2.value && runner2.value.steam != player2Steam) {
-            runner2.value.steam = player2Steam;
-        }
-    }
-
     function resetRuns() {
-        times.value = {};
-        attempts.value = {};
+        $times = {};
+        $attempts = {};
     }
 
     function startPractice() {
@@ -121,15 +67,15 @@
             <th class="list-cell">Ready</th>
             <th class="list-cell">Runs</th>
         </tr>
-        {#each playerList as player}
+        {#each $ghostClients ?? [] as player}
             <tr>
                 <td class="list-cell">{player.id}</td>
                 <td class="list-cell">{player.name}</td>
                 <td class="list-cell">{player.map}</td>
-                <td class="list-cell"><input type="radio" id={`${player.id}-p1`} name="player1" checked={player1Steam === player.name} on:click={() => player1Steam = player.name}></td>
-                <td class="list-cell"><input type="radio" id={`${player.id}-p2`} name="player2" checked={player2Steam === player.name} on:click={() => player2Steam = player.name}></td>
+                <td class="list-cell"><input type="radio" id={`${player.id}-p1`} name="player1" checked={$runner1?.steam === player.name} on:click={() => $runner1.steam = player.name}></td>
+                <td class="list-cell"><input type="radio" id={`${player.id}-p2`} name="player2" checked={$runner2?.steam === player.name} on:click={() => $runner2.steam = player.name}></td>
                 <td class="list-cell">{player.raceReady}</td>
-                <td class="list-cell">{player.runs}</td>
+                <td class="list-cell">{$times?.[player.name]?.length ?? 0}/{$attempts?.[player.name] ?? 0}</td>
             </tr>
         {/each}
     </table>
@@ -139,8 +85,9 @@
     <button on:click={startRound}>Start Round (5 Second Countdown)</button>
     <hr>
     Stream Delay Management
+    <br>
+    <span>Current Delay: <input bind:value={$streamDelay} type="number"> </span>
     <button on:click={forceResync}>Force Resync</button>
-    <span>Current Delay: {delay}</span>
 </div>
 
 <style>

@@ -1,14 +1,16 @@
 <script lang="ts">
+    import 'virtual:fonts.css';
     import RunTimes from "./RunTimes.svelte";
     import Fa from 'svelte-fa/src/fa.svelte';
     import { faMicrophone } from "@fortawesome/free-solid-svg-icons";
+    import Microphone from "./microphone.svg";
 
     const timer = nodecg.Replicant("timer", "nodecg-speedcontrol");
     const timerDuration = nodecg.Replicant('timer-duration', "p2cml");
     const globalCommentators = nodecg.Replicant("commentators");
     const runner1 = nodecg.Replicant("runner1", { persistent: false });
     const runner2 = nodecg.Replicant("runner2", { persistent: false });
-    const streamDelay = nodecg.Replicant("streamDelay", { defaultValue: 0, persistent: false });
+    const streamDelay = nodecg.Replicant("streamDelay", { defaultValue: 7, persistent: false });
     const times = nodecg.Replicant("times", { persistent: false });
 
     // Track runner steam accounts/display names
@@ -29,6 +31,7 @@
     runner1.on('change', (newValue, oldValue) => {
         runner1Name = newValue.displayName;
         runner1Steam = newValue.steam;
+        runner1Score = newValue.score;
 
         // Schedule a PB update to account for stream delay
         let pb = times.value?.[runner1Steam]?.[0]?.totalSeconds;
@@ -39,6 +42,7 @@
     runner2.on('change', (newValue, oldValue) => {
         runner2Name = newValue.displayName;
         runner2Steam = newValue.steam;
+        runner2Score = newValue.score;
 
         // Schedule a PB update to account for stream delay
         let pb = times.value?.[runner2Steam]?.[0]?.totalSeconds;
@@ -147,7 +151,9 @@
             <div>
                 {#each commentatorNames as commentator}
                     <div class="commentator">
-                        <div class="microphone"><Fa icon={faMicrophone} scale="1.2" size="3x" color="white"/></div>
+                        <div class="microphone">
+                            <Microphone height="100%"/>
+                        </div>
                         <div class="commName">{commentator}</div>
                     </div>
                 {/each}

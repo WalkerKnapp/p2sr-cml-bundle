@@ -1,24 +1,21 @@
 <script lang="ts">
     import {globalAllowedMaps} from "../../shared/allmaps";
+    import {replicantStores} from "../../shared/replicants";
 
-    const VETOS_PER_PLAYER = 5;
+    const replicants = replicantStores(nodecg);
 
-    let player1Vetos = Array(VETOS_PER_PLAYER);
-    let player2Vetos = Array(VETOS_PER_PLAYER);
-
-    const currentMap = nodecg.Replicant("currentMap", { persistent: false })
-
-    let currentMapName = "None";
-    currentMap.on('change', (newValue) => currentMapName = newValue?.name ?? "None");
+    const player1Vetos = replicants.player1Vetos;
+    const player2Vetos = replicants.player2Vetos;
+    const currentMap = replicants.currentMap;
 
     function rerollMap() {
         let mapPool = globalAllowedMaps
-            .filter(m => !player1Vetos.includes(m))
-            .filter(m => !player2Vetos.includes(m));
+            .filter(m => !$player1Vetos.some(m2 => m.name === m2))
+            .filter(m => !$player2Vetos.some(m2 => m.name === m2));
 
-        currentMap.value = mapPool[Math.floor(Math.random() * mapPool.length)];
+        $currentMap = mapPool[Math.floor(Math.random() * mapPool.length)];
 
-        nodecg.sendMessageToBundle('currentMap', 'p2cml', currentMap.value.name);
+        nodecg.sendMessageToBundle('currentMap', 'p2cml', $currentMap.name);
     }
 </script>
 
@@ -26,28 +23,29 @@
     <div class="vetos">
         <div class="veto">
             Player 1's Vetos
-            {#each player1Vetos as veto}
-                <select bind:value={veto} style="max-width: fit-content">
+            {#each $player1Vetos ?? [] as veto, i}
+                <select bind:value={$player1Vetos[i]} style="max-width: fit-content">
                     {#each globalAllowedMaps as map}
-                        <option value={map}>{map.name}</option>
+                        <option value={map.name}>{map.name}</option>
                     {/each}
                 </select>
             {/each}
         </div>
         <div class="veto">
             Player 2's Vetos
-            {#each player2Vetos as veto}
-                <select bind:value={veto} style="max-width: fit-content">
+            {#each $player2Vetos ?? [] as veto, i}
+                <select bind:value={$player2Vetos[i]} style="max-width: fit-content">
                     {#each globalAllowedMaps as map}
-                        <option value={map}>{map.name}</option>
+                        <option value={map.name}>{map.name}</option>
                     {/each}
                 </select>
             {/each}
         </div>
     </div>
     <div class="rerollBox">
+        Current Map: {$currentMap?.name ?? "None"}
         <button on:click={rerollMap} style="max-width: fit-content">Reroll Map</button>
-        Current Map: {currentMapName}
+        <button on:click={() => $currentMap = undefined} style="max-width: fit-content">Reset Map</button>
     </div>
 </div>
 
