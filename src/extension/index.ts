@@ -4,6 +4,8 @@ import {GhostClient, GhostServer, MapChange} from "./ghostserver";
 import {replicants} from "../shared/replicants";
 import {VETOS_PER_PLAYER} from "../shared/constants";
 
+import * as request from "request";
+
 enum Phase {
     NOT_IN_ROUND,
     PRACTICE,
@@ -52,14 +54,16 @@ export default (nodecg: NodeCG) => {
                 boardsName: allPlayers[0].social?.twitch,
                 // @ts-ignore
                 steam: runner1.value?.steam,
-                score: p2cmlScore1.value
+                score: p2cmlScore1.value,
+                avatar: runner1.value?.avatar
             };
             runner2.value = {
                 displayName: allPlayers[1].name,
-                boardsName: allPlayers[1].social?.twtich,
+                boardsName: allPlayers[1].social?.twitch,
                 // @ts-ignore
                 steam: runner2.value?.steam,
-                score: p2cmlScore2.value
+                score: p2cmlScore2.value,
+                avatar: runner2.value?.avatar
             };
             commentators.value = allPlayers.slice(2).map(p => p.name);
         }
@@ -72,7 +76,8 @@ export default (nodecg: NodeCG) => {
             boardsName: runner1.value?.boardsName,
             // @ts-ignore
             steam: runner1.value?.steam,
-            score: newValue
+            score: newValue,
+            avatar: runner1.value?.avatar
         };
     });
     p2cmlScore2.on('change', (newValue) => {
@@ -83,8 +88,50 @@ export default (nodecg: NodeCG) => {
             boardsName: runner2.value?.boardsName,
             // @ts-ignore
             steam: runner2.value?.steam,
-            score: newValue
+            score: newValue,
+            avatar: runner2.value?.avatar
         };
+    });
+
+    runner1.on('change', (newValue, oldValue) => {
+        console.log("player 1 update", newValue);
+        if (newValue?.boardsName) {
+            if (!newValue?.avatar || newValue?.boardsName !== oldValue?.boardsName) {
+                console.log("Requesting profile data for", newValue?.boardsName);
+                request(`https://board.portal2.sr/profile/${newValue?.boardsName}/json`, {json: true}, (err, res, body) => {
+                    runner1.value = {
+                        // @ts-ignore
+                        displayName: runner1.value.displayName,
+                        // @ts-ignore
+                        boardsName: runner1.value?.boardsName,
+                        // @ts-ignore
+                        steam: runner1.value?.steam,
+                        score: runner1.value?.score,
+                        avatar: body["userData"]["avatar"]
+                    };
+                });
+            }
+        }
+    });
+    runner2.on('change', (newValue, oldValue) => {
+        console.log("player 2 update", newValue);
+        if (newValue?.boardsName) {
+            if (!newValue?.avatar || newValue?.boardsName !== oldValue?.boardsName) {
+                console.log("Requesting profile data for", newValue?.boardsName);
+                request(`https://board.portal2.sr/profile/${newValue?.boardsName}/json`, {json: true}, (err, res, body) => {
+                    runner2.value = {
+                        // @ts-ignore
+                        displayName: runner2.value.displayName,
+                        // @ts-ignore
+                        boardsName: runner2.value?.boardsName,
+                        // @ts-ignore
+                        steam: runner2.value?.steam,
+                        score: runner2.value?.score,
+                        avatar: body["userData"]["avatar"]
+                    };
+                });
+            }
+        }
     });
 
     const server = new GhostServer();

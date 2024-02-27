@@ -139,7 +139,7 @@ export class GhostServer {
             });
         }, 50));
 
-        this.server.listen(53000, "0.0.0.0");
+        //this.server.listen(53000, "0.0.0.0");
     }
 
     sendChatMessage(target: number, authorId: number, content: string) {

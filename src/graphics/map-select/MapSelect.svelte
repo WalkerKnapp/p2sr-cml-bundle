@@ -13,6 +13,9 @@
 
     const replicants = replicantStores(nodecg);
 
+    const runner1 = replicants.runner1;
+    const runner2 = replicants.runner2;
+
     const player1Vetos = replicants.player1Vetos;
     const player2Vetos = replicants.player2Vetos;
     const currentMap = replicants.currentMap;
@@ -199,8 +202,8 @@
 
 <div class="content">
     <div class="banBox">
-        <div class="userName">rudko</div>
-        <img class="avatar" src="https://avatars.akamai.steamstatic.com/b932115fe2e18117925e28499fa0cea637caf7bd_full.jpg">
+        <div class="userName">{$runner1?.displayName ?? ""}</div>
+        <img class="avatar" src={$runner1?.avatar ?? ""}>
         <div class="bannedText">Banned</div>
         {#each $player1Vetos ?? [] as map}
             {#if map}
@@ -247,8 +250,8 @@
         {/each}
     </div>
     <div class="banBox">
-        <div class="userName">Zennan</div>
-        <img class="avatar" src="https://avatars.akamai.steamstatic.com/f6f42b09f13448a3d95a9bbd36cc197cae86766c_full.jpg">
+        <div class="userName">{$runner2?.displayName ?? ""}</div>
+        <img class="avatar" src={$runner2?.avatar ?? ""}>
         <div class="bannedText">Banned</div>
         {#each $player2Vetos ?? [] as map}
             {#if map}

@@ -1,7 +1,7 @@
 <script lang="ts">
     import {replicantStores} from "../../shared/replicants";
 
-    const WEBSOCKET_PASSWORD = "password_here";
+    const WEBSOCKET_PASSWORD = "kro62w0oi";
 
     const replicants = replicantStores(nodecg);
 

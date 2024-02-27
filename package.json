@@ -10,7 +10,7 @@
     },
     "scripts": {
         "build": "concurrently \"npm:build:*\"",
-        "build:extension": "tsc src/extension/index.ts --skipLibCheck --target es2015 --module CommonJS --moduleResolution node --outDir extension",
+        "build:extension": "tsc src/extension/index.ts --skipLibCheck --target es2015 --module CommonJS --moduleResolution node --outDir .",
         "build:graphics": "vite build src/graphics",
         "build:dashboard": "vite build src/dashboard"
     },
@@ -75,6 +75,7 @@
     "dependencies": {
         "@fortawesome/free-solid-svg-icons": "^6.2.0",
         "obs-websocket-js": "^5.0.1",
+        "request": "^2.88.2",
         "smart-buffer": "^4.2.0",
         "svelte-fa": "^3.0.3"
     }
